@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 
-const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
 const SCRIPT = `Hi, my name is [YOUR NAME] and I'm a constituent from [YOUR CITY].
 
 I'm calling because Representatives Massie and Raskin confirmed the DOJ is hiding co-conspirator names behind redactions in the Epstein files.
@@ -57,106 +55,124 @@ async function fetchReps(zip) {
 // ── Components ──
 
 function RepCard({ rep, index, called, onCall, onUncall }) {
+  const [dialed, setDialed] = useState(false);
   const phoneDigits = rep.phone?.replace(/\D/g, "") || "";
   const partyColor =
     rep.party?.startsWith("R") ? "#ef4444" :
     rep.party?.startsWith("D") ? "#3b82f6" : "#a855f7";
   const label = rep.type === "House" ? `${rep.state}-${rep.district}` : `${rep.state} Senator`;
 
-  const handleCallClick = () => {
-    onCall(index);
-  };
-
   return (
     <div
       style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
         padding: 16,
         background: called ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.02)",
-        border: `1px solid ${called ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.07)"}`,
+        border: `1px solid ${called ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.12)"}`,
         borderRadius: 10,
         transition: "all 0.2s",
-        flexWrap: "wrap",
       }}
     >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "#f5f0e8", marginBottom: 2 }}>
-          {rep.name}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#f5f0e8", marginBottom: 2 }}>
+            {rep.name}
+          </div>
+          <div style={{ fontSize: 11, color: "#9ca3af", letterSpacing: 0.5 }}>
+            <span style={{ color: partyColor }}>{rep.party}</span> &middot; {label}
+          </div>
         </div>
-        <div style={{ fontSize: 11, color: "#4a4a4a", letterSpacing: 0.5 }}>
-          <span style={{ color: partyColor }}>{rep.party}</span> &middot; {label} &middot; {rep.phone}
-        </div>
+
+        {called ? (
+          <button
+            onClick={() => onUncall(index)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              background: "rgba(34,197,94,0.08)",
+              border: "1px solid rgba(34,197,94,0.25)",
+              borderRadius: 8,
+              padding: "12px 20px",
+              color: "#4ade80",
+              fontWeight: 700,
+              fontSize: 14,
+              fontFamily: "'Courier New', monospace",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            &#10003; Called
+          </button>
+        ) : (
+          <a
+            href={`tel:${phoneDigits}`}
+            onClick={() => setDialed(true)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: "#dc2626",
+              border: "none",
+              borderRadius: 8,
+              padding: "12px 20px",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: 14,
+              fontFamily: "'Courier New', monospace",
+              textDecoration: "none",
+              cursor: "pointer",
+              flexShrink: 0,
+              letterSpacing: 0.5,
+            }}
+          >
+            &#9742; {rep.phone}
+          </a>
+        )}
       </div>
 
-      {called ? (
-        <button
-          onClick={() => onUncall(index)}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            background: "rgba(34,197,94,0.08)",
-            border: "1px solid rgba(34,197,94,0.25)",
-            borderRadius: 8,
-            padding: "12px 20px",
-            color: "#4ade80",
-            fontWeight: 700,
-            fontSize: 14,
-            fontFamily: "'Courier New', monospace",
-            cursor: "pointer",
-            flexShrink: 0,
-          }}
-        >
-          &#10003; Called
-        </button>
-      ) : IS_MOBILE ? (
-        <a
-          href={`tel:${phoneDigits}`}
-          onClick={handleCallClick}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            background: "#dc2626",
-            border: "none",
-            borderRadius: 8,
-            padding: "12px 20px",
-            color: "#fff",
-            fontWeight: 700,
-            fontSize: 15,
-            fontFamily: "'Courier New', monospace",
-            textDecoration: "none",
-            cursor: "pointer",
-            flexShrink: 0,
-          }}
-        >
-          &#9742; Call
-        </a>
-      ) : (
-        <button
-          onClick={handleCallClick}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            background: "#dc2626",
-            border: "none",
-            borderRadius: 8,
-            padding: "12px 20px",
-            color: "#fff",
-            fontWeight: 700,
-            fontSize: 14,
-            fontFamily: "'Courier New', monospace",
-            cursor: "pointer",
-            flexShrink: 0,
-            letterSpacing: 0.5,
-          }}
-        >
-          &#9742; {rep.phone}
-        </button>
+      {/* Confirm after dialing */}
+      {dialed && !called && (
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          marginTop: 10,
+          paddingTop: 10,
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+        }}>
+          <span style={{ fontSize: 12, color: "#9ca3af", flex: 1 }}>Did you get through?</span>
+          <button
+            onClick={() => { onCall(index); setDialed(false); }}
+            style={{
+              background: "rgba(34,197,94,0.12)",
+              border: "1px solid rgba(34,197,94,0.3)",
+              borderRadius: 6,
+              padding: "6px 14px",
+              color: "#4ade80",
+              fontWeight: 700,
+              fontSize: 12,
+              fontFamily: "'Courier New', monospace",
+              cursor: "pointer",
+            }}
+          >
+            Yes, I called
+          </button>
+          <button
+            onClick={() => setDialed(false)}
+            style={{
+              background: "none",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 6,
+              padding: "6px 14px",
+              color: "#8b95a5",
+              fontSize: 12,
+              fontFamily: "'Courier New', monospace",
+              cursor: "pointer",
+            }}
+          >
+            Not yet
+          </button>
+        </div>
       )}
     </div>
   );
@@ -191,7 +207,7 @@ function CallScript({ reps, calledSet }) {
         style={{
           background: "none",
           border: "none",
-          color: "#64748b",
+          color: "#9ca3af",
           fontSize: 12,
           fontFamily: "'Courier New', monospace",
           cursor: "pointer",
@@ -231,12 +247,12 @@ function CallScript({ reps, calledSet }) {
           <div
             style={{
               background: "rgba(0,0,0,0.3)",
-              border: "1px solid rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.1)",
               borderRadius: 8,
               padding: 16,
               fontSize: 13,
               lineHeight: 1.8,
-              color: "#8a8a8a",
+              color: "#b0b8c4",
               whiteSpace: "pre-wrap",
             }}
           >
@@ -264,7 +280,7 @@ function StickerForm({ zip }) {
         <div style={{ fontSize: 16, color: "#4ade80", fontFamily: "Georgia, serif", marginBottom: 6 }}>
           Stickers on the way.
         </div>
-        <p style={{ fontSize: 13, color: "#64748b", fontFamily: "Georgia, serif" }}>
+        <p style={{ fontSize: 13, color: "#94a3b8", fontFamily: "Georgia, serif" }}>
           Now share this page and get 3 people to call.
         </p>
       </div>
@@ -315,7 +331,7 @@ function StickerForm({ zip }) {
           SEND MY FREE STICKERS
         </button>
       </div>
-      <p style={{ fontSize: 11, color: "#333", marginTop: 10, lineHeight: 1.5 }}>
+      <p style={{ fontSize: 11, color: "#6b7280", marginTop: 10, lineHeight: 1.5 }}>
         US addresses only. Ships in ~2 weeks. Address used only for shipping.
       </p>
     </div>
@@ -326,14 +342,14 @@ function StickerForm({ zip }) {
 
 const cardStyle = {
   background: "rgba(255,255,255,0.03)",
-  border: "1px solid rgba(255,255,255,0.07)",
+  border: "1px solid rgba(255,255,255,0.12)",
   borderRadius: 12,
   padding: 24,
 };
 
 const inputStyle = {
   background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.07)",
+  border: "1px solid rgba(255,255,255,0.12)",
   borderRadius: 6,
   padding: "12px 14px",
   color: "#f5f0e8",
@@ -459,7 +475,7 @@ export function App() {
             style={{
               fontFamily: "Georgia, serif",
               fontSize: 16,
-              color: "#64748b",
+              color: "#94a3b8",
               lineHeight: 1.6,
               maxWidth: 440,
               margin: "0 auto",
@@ -471,7 +487,7 @@ export function App() {
 
         {/* Zip Input */}
         <div style={{ ...cardStyle, marginBottom: 16 }}>
-          <div style={{ fontSize: 11, color: "#4a4a4a", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+          <div style={{ fontSize: 11, color: "#8b95a5", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
             Your zip code
           </div>
           <div style={{ display: "flex", gap: 10 }}>
@@ -487,7 +503,7 @@ export function App() {
               style={{
                 flex: 1,
                 background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.07)",
+                border: "1px solid rgba(255,255,255,0.12)",
                 borderRadius: 8,
                 padding: "14px 16px",
                 color: "#f5f0e8",
@@ -520,7 +536,7 @@ export function App() {
             </button>
           </div>
           {zipInfo && (
-            <div style={{ fontSize: 12, color: "#64748b", marginTop: 8, textAlign: "center" }}>
+            <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 8, textAlign: "center" }}>
               Detected: {zipInfo.city}, {zipInfo.region}
             </div>
           )}
@@ -534,7 +550,7 @@ export function App() {
           <div ref={repsRef}>
             <div style={{ ...cardStyle, marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                <div style={{ fontSize: 11, color: "#4a4a4a", letterSpacing: 2, textTransform: "uppercase" }}>
+                <div style={{ fontSize: 11, color: "#8b95a5", letterSpacing: 2, textTransform: "uppercase" }}>
                   Your representatives
                 </div>
                 {reps && reps.length > 0 && (
@@ -554,7 +570,7 @@ export function App() {
                         flex: 1,
                         height: 4,
                         borderRadius: 2,
-                        background: calledSet.has(i) ? "#4ade80" : "rgba(255,255,255,0.06)",
+                        background: calledSet.has(i) ? "#4ade80" : "rgba(255,255,255,0.15)",
                         transition: "background 0.3s",
                       }}
                     />
@@ -564,7 +580,7 @@ export function App() {
 
               {/* Loading */}
               {loading && (
-                <div style={{ textAlign: "center", padding: 32, color: "#4a4a4a", fontSize: 13 }}>
+                <div style={{ textAlign: "center", padding: 32, color: "#8b95a5", fontSize: 13 }}>
                   Finding your representatives...
                 </div>
               )}
@@ -587,7 +603,7 @@ export function App() {
 
               {/* Empty state */}
               {reps && reps.length === 0 && (
-                <div style={{ textAlign: "center", padding: 24, color: "#4a4a4a", fontSize: 13 }}>
+                <div style={{ textAlign: "center", padding: 24, color: "#8b95a5", fontSize: 13 }}>
                   No representatives found. Try a different zip code.
                 </div>
               )}
@@ -615,14 +631,14 @@ export function App() {
               <h3 style={{ color: "#4ade80", fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 400, marginBottom: 8 }}>
                 All called. You did the thing.
               </h3>
-              <p style={{ color: "#64748b", fontSize: 14, fontFamily: "Georgia, serif" }}>
+              <p style={{ color: "#94a3b8", fontSize: 14, fontFamily: "Georgia, serif" }}>
                 Every call is logged by staffers. You just made the report.
               </p>
             </div>
 
             {/* Sticker claim */}
             <div style={{ ...cardStyle, marginBottom: 16 }}>
-              <div style={{ fontSize: 11, color: "#4a4a4a", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: "#8b95a5", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
                 Get your free sticker pack
               </div>
               <StickerForm zip={zip} />
@@ -630,7 +646,7 @@ export function App() {
 
             {/* Share */}
             <div style={{ ...cardStyle, marginBottom: 16 }}>
-              <div style={{ fontSize: 11, color: "#4a4a4a", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: "#8b95a5", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
                 Multiply your impact
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -657,11 +673,11 @@ export function App() {
         )}
 
         {/* Footer */}
-        <footer style={{ padding: "40px 0 60px", textAlign: "center", borderTop: "1px solid rgba(255,255,255,0.04)", marginTop: 40 }}>
-          <p style={{ fontSize: 11, color: "#222", lineHeight: 1.7 }}>
+        <footer style={{ padding: "40px 0 60px", textAlign: "center", borderTop: "1px solid rgba(255,255,255,0.12)", marginTop: 40 }}>
+          <p style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.7 }}>
             Not affiliated with any political party, campaign, or government entity.
             <br />
-            <a href="https://jmail.world" style={{ color: "#333", textDecoration: "none" }}>
+            <a href="https://jmail.world" style={{ color: "#8b95a5", textDecoration: "none" }}>
               Read the emails
             </a>
           </p>
@@ -672,7 +688,7 @@ export function App() {
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         body { -webkit-font-smoothing: antialiased; }
-        input::placeholder { color: #333; }
+        input::placeholder { color: #6b7280; }
         input:focus { border-color: rgba(220,38,38,0.4) !important; outline: none; }
         @media (max-width: 480px) {
           .rep-card-wrap { flex-direction: column !important; align-items: stretch !important; }
@@ -688,7 +704,7 @@ const shareBtnStyle = {
   alignItems: "center",
   justifyContent: "center",
   background: "rgba(255,255,255,0.03)",
-  border: "1px solid rgba(255,255,255,0.07)",
+  border: "1px solid rgba(255,255,255,0.12)",
   color: "#c8c4b8",
   padding: "12px 14px",
   borderRadius: 6,
